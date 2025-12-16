@@ -1,0 +1,125 @@
+You are an expert Google Cloud architect and a specialist in building multi-agent generative AI systems for data integration. Your task is to design and implement a Multi-Agent Workflow for Intelligent Data Integration on Google Cloud, focusing on automating the ETL process from CSV files to BigQuery.
+
+**Overall Goal:** Develop an AI-powered system that significantly reduces data onboarding time, improves data accuracy through human-in-the-loop validation, provides transparency, offers a natural language interface, and continuously learns from user feedback. The system must perform ETL (Extract, Transform, Load) from source CSVs into a target BigQuery schema, including schema discovery and mapping, validation, transformations, idempotent loads, lineage tracking, and automated testing.
+
+**Core Components & Agent Responsibilities:**
+
+**1. Data Ingestion & Pre-processing Agent (Extraction & Initial Validation):**
+    *   **Input:** CSV files from Google Cloud Storage (GCS).
+    *   **Responsibilities:**
+        *   Monitor a specified GCS bucket for new CSV file arrivals (e.g., using Cloud Functions triggered by GCS events).
+        *   Read and parse CSV data.
+        *   Perform initial schema inference (data types, column names) for incoming CSVs if no explicit schema is provided.
+        *   Generate a unique identifier for each incoming batch/file for lineage tracking.
+        *   Pass inferred schema and raw data batches to the Schema Mapping Agent and Validation Agent.
+    *   **Google Cloud Services:** Cloud Storage, Cloud Functions, Dataflow (for robust CSV parsing and initial processing if needed).
+
+**2. Schema Mapping & Transformation Agent (Schema Discovery & Mapping, Transformation Logic Generation):**
+    *   **Input:** Inferred schema from the Data Ingestion Agent, target BigQuery DDL.
+    *   **Responsibilities:**
+        *   Compare the inferred source schema with the target BigQuery schema.
+        *   Intelligently suggest mappings between source and target columns, identifying potential discrepancies (e.g., naming conventions, data type mismatches).
+        *   Generate transformation rules (e.g., type casting, renaming, simple aggregations) to align source data with the target schema.
+        *   Calculate a "confidence score" for each suggested mapping and transformation.
+        *   If the Platinum tier is targeted, auto-generate SQL transformations for BigQuery.
+        *   Send suggested mappings, transformations, and confidence scores to the Human-in-the-Loop (HITL) Validation Agent.
+        *   Incorporate user feedback and schema templates for continuous refinement of mapping logic.
+    *   **Google Cloud Services:** Vertex AI (for LLM agent logic using Gemini models), BigQuery (for schema introspection), Cloud Functions/Cloud Run (for deploying custom agent logic).
+
+**3. Human-in-the-Loop (HITL) Validation Agent (Accuracy & User Empowerment):**
+    *   **Input:** Suggested schema mappings, transformation rules, and confidence scores from the Schema Mapping Agent.
+    *   **Responsibilities:**
+        *   Present proposed mappings and transformations to a human reviewer via a natural language interface (e.g., a chat interface built with Dialogflow or a custom web UI).
+        *   Highlight low-confidence mappings or transformations requiring human attention.
+        *   Capture human feedback, approvals, and manual adjustments to mappings and transformation rules.
+        *   Store validated mappings and transformation rules in a persistent knowledge base (e.g., BigQuery table or Firestore).
+        *   Feed approved mappings/rules back to the Schema Mapping Agent for continuous learning and refinement.
+        *   For the Silver tier, generate validation reports for 'staging_errors' table based on rules.
+    *   **Google Cloud Services:** Vertex AI Agent Builder, Dialogflow CX/ES, custom UI on Cloud Run/App Engine, BigQuery, Firestore.
+
+**4. Data Validation & Error Handling Agent (Validation Rules Enforcement & Anomaly Detection):**
+    *   **Input:** Raw data from the Data Ingestion Agent, validated schema mappings, and transformation rules from the HITL Validation Agent.
+    *   **Responsibilities:**
+        *   Apply validation rules (e.g., null checks, format validation, referential integrity checks) based on the target BigQuery schema and any custom rules.
+        *   Identify and log data quality issues and errors.
+        *   For the Silver tier, perform automatic deduplication and type coercion, and direct invalid records or errors to a `staging_errors` BigQuery table.
+        *   For the Gold tier, implement anomaly detection on numeric indicators and suggest corrective transformations with explainable steps.
+        *   Route valid, transformed data to the Data Loading Agent and error data to an error handling mechanism.
+        *   Track validation outcomes for lineage and audit trails.
+    *   **Google Cloud Services:** Dataflow, BigQuery, Vertex AI (for anomaly detection and explainable AI).
+
+**5. Data Loading & Lineage Tracking Agent (Idempotent Loads & Audit Trails):**
+    *   **Input:** Validated and transformed data batches from the Data Validation Agent.
+    *   **Responsibilities:**
+        *   Load data into the target BigQuery tables.
+        *   Ensure idempotent loads to prevent duplicate data entry (e.g., using primary keys, merge statements, or upserts in BigQuery).
+        *   Maintain comprehensive lineage tracking and audit trails for each data movement and transformation step, including:
+            *   Source file details (path, timestamp).
+            *   Original vs. transformed column names.
+            *   Applied transformation rules.
+            *   Validation results and error counts.
+            *   User approvals for mappings.
+            *   Loading timestamps and status.
+        *   Expose lineage information for querying and visualization.
+    *   **Google Cloud Services:** BigQuery, Dataflow, Cloud Composer (for orchestration of complex DAGs if necessary).
+
+**6. Monitoring & Testing Agent (Automated Tests & Continuous Integration/Deployment):**
+    *   **Input:** New schema mappings, transformation logic, and data loads.
+    *   **Responsibilities:**
+        *   Generate and execute automated tests (e.g., data assertions, schema compliance checks) on newly loaded data.
+        *   Validate expected outcomes against sample assertions.
+        *   Report test results and flag any failures.
+        *   For the Platinum tier, integrate with CI/CD pipelines to automatically run tests and deploy new transformation logic on new CSV arrivals.
+        *   Monitor the overall health and performance of the multi-agent workflow.
+    *   **Google Cloud Services:** Cloud Build, Cloud Monitoring, Cloud Logging, BigQuery.
+
+**Natural Language Interface (Overall System Interaction):**
+    *   **Responsibilities:**
+        *   Provide a unified natural language interface for users to interact with the system for:
+            *   Initiating data onboarding.
+            *   Reviewing and validating schema mappings.
+            *   Querying metadata and audit trails.
+            *   Visualizing data quality reports and lineage.
+        *   This interface should orchestrate interactions with various agents.
+    *   **Google Cloud Services:** Vertex AI Agent Builder, Dialogflow CX/ES, custom frontend on Cloud Run/App Engine.
+
+**Technology Stack (Google Cloud Focus):**
+*   **Generative AI/LLMs:** Vertex AI (Gemini models, Model Garden, Agent Builder) for intelligent decision-making, natural language understanding, and code generation.
+*   **Data Processing:** Dataflow (for large-scale ETL, stream processing), BigQuery (target data warehouse, metadata storage), Cloud Storage (source data landing zone).
+*   **Orchestration:** Cloud Composer (Apache Airflow) for complex, scheduled workflows, or Cloud Functions/Cloud Run for event-driven, serverless orchestration of individual agents.
+*   **Serverless Compute:** Cloud Functions, Cloud Run (for deploying individual agent services).
+*   **Databases/Storage:** BigQuery (for data, metadata, audit logs), Firestore (for agent state, user feedback, configuration).
+*   **Monitoring & Logging:** Cloud Monitoring, Cloud Logging.
+*   **CI/CD:** Cloud Build.
+
+**Project Deliverables (Tier-Specific):**
+
+*   **Bronze:**
+    *   A functional multi-agent system that reads CSVs from GCS.
+    *   Performs basic schema validation against a provided BigQuery DDL.
+    *   Loads data into the target BigQuery table.
+    *   Basic logging for each step.
+*   **Silver (Bronze +):**
+    *   Automatic deduplication of records.
+    *   Type coercion for common data type mismatches.
+    *   Generation of validation reports saved to a `staging_errors` BigQuery table for records that fail validation.
+    *   Improved metadata tracking for error reporting.
+*   **Gold (Silver +):**
+    *   Implementation of an Anomaly Detection Agent using Vertex AI that identifies anomalies in numeric indicators.
+    *   Suggestions for corrective transformations for anomalies, along with explainable steps from the agent.
+    *   Enhanced natural language interface for interacting with anomaly detection insights.
+*   **Platinum (Gold +):**
+    *   An agent capable of auto-generating SQL transformations (e.g., DDL for new tables, DML for complex transformations) based on inferred schema and target requirements.
+    *   CI/CD integration using Cloud Build to automatically trigger agent pipelines and deploy new transformation logic upon new CSV file arrivals in GCS, including automated testing.
+    *   Comprehensive lineage tracking from source to target, including transformation logic applied.
+
+**Development Process:**
+1.  **Design each agent:** Define its specific responsibilities, inputs, outputs, and interactions with other agents.
+2.  **Choose appropriate Google Cloud services:** Select the best service for each agent's function.
+3.  **Implement agent logic:** Use Python with Google Cloud client libraries and Vertex AI SDKs.
+4.  **Orchestrate agent interactions:** Design the communication flow between agents (e.g., Pub/Sub, API calls).
+5.  **Develop natural language interfaces:** Create user-friendly interfaces for human interaction points.
+6.  **Implement continuous learning and feedback loops:** Design mechanisms for agents to improve over time.
+7.  **Focus on robust error handling and logging.**
+8.  **Ensure comprehensive metadata and lineage tracking.**
+9.  **Iterate and test:** Continuously test and refine the system, starting with the Bronze tier and progressing to Platinum.
